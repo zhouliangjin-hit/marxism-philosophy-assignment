@@ -44,6 +44,28 @@ Views.map = function () {
     for (const id of autoExpandedIds()) expanded.add(id);
   }
   syncExpanded();
+  /* ---- 闯关锁定：导图随闯关进度解锁 ----
+     每个节点记下"首次解锁它的关卡序号"；未解锁的节点不可手动展开，
+     搜索/面板/目录同样不可见。VIP 全部放行（allowedIds 返回 null 表示无限制）。 */
+  const unlockLevelOf=new Map();
+  unlockLevelOf.set(root.id,0);
+  if (typeof LEVELS !== "undefined") {
+    LEVELS.forEach((lv,i) => {
+      for (const [bi,depth] of (LEVEL_BRANCH_MAP[lv.id] || [])) {
+        const b=branches[bi]; if (!b) continue;
+        (function add(n,d){ if (!unlockLevelOf.has(n.id)) unlockLevelOf.set(n.id,i); if (d > 0) for (const c of n.children || []) add(c,d-1); })(b,depth);
+      }
+    });
+  }
+  const isVipUser=() => (typeof VIP !== "undefined" && VIP.get && VIP.get());
+  function allowedIds() { return isVipUser() ? null : autoExpandedIds(); }
+  function canExpandNode(n,allowed) { return !n || !allowed || allowed.has(n.id); }
+  function lockHint(n) {
+    const idx=unlockLevelOf.has(n.id) ? unlockLevelOf.get(n.id) : 9;
+    const lv=(typeof LEVELS !== "undefined" && LEVELS[idx]) ? LEVELS[idx] : null;
+    const lvName=lv ? `第${idx+1}关「${lv.name}」` : `第 ${idx+1} 关`;
+    toast(`🔒「${n.title}」尚未解锁：先通过${lvName}，或开通 👑VIP 一键解锁`);
+  }
   function branchClass(n) {
     const path=pathOf(n);
     if (path.length < 2) return "";
@@ -113,15 +135,16 @@ Views.map = function () {
     place(first,0); bounds={width:xs[columns.length-1]+columns[columns.length-1]+42,height:first.size}; return edges;
   }
   function renderGraph() {
-    const edges=layout();
+    const edges=layout(), allowed=allowedIds();
     graph.innerHTML=edges.map(([a,b]) => { const p=positions.get(a.id), c=positions.get(b.id), x=p.x+p.width+35, y=p.y+p.height/2, cy=c.y+c.height/2, mid=(x+c.x)/2; return `<path class="mm-link" aria-hidden="true" d="M ${x} ${y} C ${mid} ${y},${mid} ${cy},${c.x} ${cy}"/>`; }).join("")+visible.map(n => {
-      const p=positions.get(n.id);
-      return `<g class="mm-node ${branchClass(n)} ${n.id === scope.id ? "mm-scope-node" : ""} ${n.kind === "heading" ? "mm-heading-node" : ""} ${selected.id === n.id ? "is-selected" : ""}" data-node="${esc(n.id)}" role="treeitem" tabindex="0" aria-level="${p.depth+1}" aria-selected="${selected.id === n.id}" ${n.children?.length ? `aria-expanded="${expanded.has(n.id)}"` : ""} aria-label="${esc(n.title)}${n.children?.length ? `，${n.children.length} 个下级知识点` : ""}" transform="translate(${p.x},${p.y})"><title>${esc(n.title)} · ${esc(sourceLabel(n))}</title><rect width="${p.width}" height="${p.height}" rx="10"/>${branchClass(n) ? `<rect class="mm-branch-bar" x="0" y="12" width="4" height="${p.height-24}" rx="2"/>` : ""}<text class="mm-node-label" x="16" y="25">${p.lines.map((line,i) => `<tspan x="16" ${i ? 'dy="21"' : ""}>${esc(line)}</tspan>`).join("")}</text>${n.children?.length ? `<text class="mm-node-count" x="16" y="${p.height-8}">${n.children.length} 个下级${expanded.has(n.id) ? " · 已展开" : " · 待展开"}</text><g class="mm-toggle" data-toggle="${esc(n.id)}" role="button" tabindex="0" aria-label="${expanded.has(n.id) ? "收起" : "展开"}${esc(n.title)}" transform="translate(${p.width+19},${p.height/2})"><rect x="-17" y="-17" width="34" height="34" rx="17"/><text x="0" y="5" text-anchor="middle">${expanded.has(n.id) ? "−" : "+"}</text></g>` : ""}</g>`;
+      const p=positions.get(n.id), locked=n.children?.length && !canExpandNode(n,allowed);
+      return `<g class="mm-node ${branchClass(n)} ${n.id === scope.id ? "mm-scope-node" : ""} ${n.kind === "heading" ? "mm-heading-node" : ""} ${selected.id === n.id ? "is-selected" : ""}" data-node="${esc(n.id)}" role="treeitem" tabindex="0" aria-level="${p.depth+1}" aria-selected="${selected.id === n.id}" ${n.children?.length ? `aria-expanded="${expanded.has(n.id)}"` : ""} aria-label="${esc(n.title)}${n.children?.length ? `，${n.children.length} 个下级知识点` : ""}" transform="translate(${p.x},${p.y})"><title>${esc(n.title)} · ${esc(sourceLabel(n))}</title><rect width="${p.width}" height="${p.height}" rx="10"/>${branchClass(n) ? `<rect class="mm-branch-bar" x="0" y="12" width="4" height="${p.height-24}" rx="2"/>` : ""}<text class="mm-node-label" x="16" y="25">${p.lines.map((line,i) => `<tspan x="16" ${i ? 'dy="21"' : ""}>${esc(line)}</tspan>`).join("")}</text>${n.children?.length ? `<text class="mm-node-count" x="16" y="${p.height-8}">${n.children.length} 个下级${expanded.has(n.id) ? " · 已展开" : locked ? " · 未解锁" : " · 待展开"}</text><g class="mm-toggle${locked ? " is-locked" : ""}" data-toggle="${esc(n.id)}" role="button" tabindex="0" aria-label="${locked ? "未解锁" : expanded.has(n.id) ? "收起" : "展开"}${esc(n.title)}" transform="translate(${p.width+19},${p.height/2})"><rect x="-17" y="-17" width="34" height="34" rx="17"/><text x="0" y="5" text-anchor="middle">${expanded.has(n.id) ? "−" : locked ? "🔒" : "+"}</text></g>` : ""}</g>`;
     }).join("");
     query("#mmScopeTitle").textContent=scope.id === root.id ? "全章概览" : scope.title; query("#mmVisibleCount").textContent=`显示 ${visible.length} / ${counts.get(scope.id)} 个节点`;
   }
   function renderOutline() {
-    function item(n,depth) { const children=n.children || [], open=expanded.has(n.id); return `<li role="none"><div class="mm-outline-row ${selected.id === n.id ? "is-selected" : ""}">${children.length ? `<button class="mm-outline-toggle" data-toggle="${esc(n.id)}" aria-label="${open ? "收起" : "展开"}${esc(n.title)}" aria-expanded="${open}">${open ? "−" : "+"}</button>` : '<span class="mm-outline-dot" aria-hidden="true">·</span>'}<button class="mm-outline-label" data-node="${esc(n.id)}" role="treeitem" aria-level="${depth+1}" aria-selected="${selected.id === n.id}" ${children.length ? `aria-expanded="${open}"` : ""}><span>${esc(n.title)}</span>${children.length ? `<small>${children.length} 个下级</small>` : ""}</button></div>${open && children.length ? `<ul role="group">${children.map(c => item(c,depth+1)).join("")}</ul>` : ""}</li>`; }
+    const allowed=allowedIds();
+    function item(n,depth) { const children=n.children || [], open=expanded.has(n.id), locked=children.length && !canExpandNode(n,allowed); return `<li role="none"><div class="mm-outline-row ${selected.id === n.id ? "is-selected" : ""}">${children.length ? `<button class="mm-outline-toggle${locked ? " is-locked" : ""}" data-toggle="${esc(n.id)}" aria-label="${locked ? "未解锁" : open ? "收起" : "展开"}${esc(n.title)}" aria-expanded="${open}">${open ? "−" : locked ? "🔒" : "+"}</button>` : '<span class="mm-outline-dot" aria-hidden="true">·</span>'}<button class="mm-outline-label" data-node="${esc(n.id)}" role="treeitem" aria-level="${depth+1}" aria-selected="${selected.id === n.id}" ${children.length ? `aria-expanded="${open}"` : ""}><span>${esc(n.title)}</span>${children.length ? `<small>${children.length} 个下级</small>` : ""}</button></div>${open && children.length ? `<ul role="group">${children.map(c => item(c,depth+1)).join("")}</ul>` : ""}</li>`; }
     outline.innerHTML=`<ul class="mm-outline-tree" role="none">${item(scope,0)}</ul>`;
   }
   function applyCam() { graph.setAttribute("transform",`translate(${cam.x},${cam.y}) scale(${cam.k})`); query("#mmZoom").textContent=`${Math.round(cam.k*100)}%`; }
@@ -143,13 +166,21 @@ Views.map = function () {
   function reveal(n) {
     const path=pathOf(n), targetScope=path.length > 2 ? path[1] : root;
     if (scope.id !== targetScope.id) setScope(targetScope,false);
-    for (const p of path) manual.add(p.id);
+    const allowed=allowedIds();
+    let blocked=false;
+    for (const p of path) { if (canExpandNode(p,allowed)) manual.add(p.id); else blocked=true; }
+    if (blocked) { lockHint(n); return; }
     syncExpanded();
     selectNode(n); centerNode(n); scrollTreeNode(n);
     query(".mm-layout").scrollIntoView({block:"start"});
     query("#mmStatus").textContent=`已定位：${path.map(p => p.title).join("，")}`;
   }
-  function toggle(n) { if (!n.children?.length) return; manual.has(n.id) ? manual.delete(n.id) : manual.add(n.id); syncExpanded(); renderTree(); }
+  function toggle(n) {
+    if (!n.children?.length) return;
+    if (!canExpandNode(n,allowedIds())) { lockHint(n); return; }
+    manual.has(n.id) ? manual.delete(n.id) : manual.add(n.id);
+    syncExpanded(); renderTree();
+  }
   // 仅按节点具体主题关联练习，大类和根节点的题库不会被子节点自动继承。
   function practiceLinks(n) {
     if (n.id === root.id) return [{label:"期末真题 · 综合复习",questions:DB.ofBank("final-2024")}];
@@ -172,10 +203,12 @@ Views.map = function () {
     return "";
   }
   function traitsHtml(n) { if (!/四个特性/.test(n.title)) return ""; return `<figure class="mm-diagram"><figcaption><span class="mm-relation-mark">原文分组</span>四个特性</figcaption><div class="mm-traits"><span>科学性</span><div><span>人民性（本质属性）</span><span>实践性（基本观点）</span><span>发展性</span></div><b aria-hidden="true">}</b><strong>革命性</strong></div><p>人民性、实践性、发展性按原笔记括号分组指向革命性。</p></figure>`; }
-  function subtreeHtml(n,depth=0) { return `<details class="mm-note-branch" ${depth === 0 ? "open" : ""}><summary>${esc(n.title)} <small>${n.children?.length ? `${n.children.length} 个下级` : kindLabel(n)}</small></summary><div class="mm-note-body"><button class="mm-note-jump" data-jump="${esc(n.id)}">在导图中定位 ↗</button><span class="mm-note-source">第 ${n.source?.line || "—"} 行</span><div class="mm-notes">${notesHtml(n)}</div>${traitsHtml(n)}${(n.diagrams || []).map(diagramHtml).join("")}${(n.children || []).map(c => subtreeHtml(c,depth+1)).join("")}</div></details>`; }
+  function subtreeHtml(n,depth=0,allowed) { const kids=(n.children || []).filter(c => canExpandNode(c,allowed)); return `<details class="mm-note-branch" ${depth === 0 ? "open" : ""}><summary>${esc(n.title)} <small>${kids.length ? `${kids.length} 个下级` : kindLabel(n)}</small></summary><div class="mm-note-body"><button class="mm-note-jump" data-jump="${esc(n.id)}">在导图中定位 ↗</button><span class="mm-note-source">第 ${n.source?.line || "—"} 行</span><div class="mm-notes">${notesHtml(n)}</div>${traitsHtml(n)}${(n.diagrams || []).map(diagramHtml).join("")}${kids.map(c => subtreeHtml(c,depth+1,allowed)).join("")}</div></details>`; }
   function renderPanel() {
-    const n=selected, path=pathOf(n), links=practiceLinks(n), questions=[...new Map(links.flatMap(l => l.questions).map(q => [q.id,q])).values()], done=questions.filter(q => Store.data.answers[q.id]), correct=done.filter(q => Store.data.answers[q.id].lastOk), pct=done.length ? Math.round(100*correct.length/done.length) : null;
-    panel.innerHTML=`<div class="mm-panel-top"><span class="mm-eyebrow">${kindLabel(n)} · 原笔记导读</span><button data-command="locate" class="mm-panel-locate" title="定位当前节点">定位 ↗</button></div><h3>${esc(n.title)}</h3><nav class="mm-breadcrumb" aria-label="当前知识点路径">${path.map(p => `<button data-jump="${esc(p.id)}">${esc(p.title)}</button>`).join('<span aria-hidden="true">›</span>')}</nav><p class="mm-source">${esc(sourceLabel(n))}</p><div class="mm-notes mm-own-notes">${notesHtml(n)}</div>${traitsHtml(n)}${(n.diagrams || []).map(diagramHtml).join("")}${n.children?.length ? `<section class="mm-child-notes"><h4>下级知识点 <span>${n.children.length}</span></h4><p class="mm-panel-hint">保留原笔记层级，展开条目阅读完整说明。</p>${n.children.map(c => subtreeHtml(c)).join("")}</section>` : ""}<details class="mm-original"><summary>查看本节点原文</summary><div class="mm-raw-notes">${notesHtml(n,true)}</div></details>${links.length ? `<section class="mm-practice"><h4>关联练习</h4><div class="mm-practice-score"><strong>${pct === null ? "尚未作答" : pct+"%"}</strong><span>关联练习正确率<small>已做 ${done.length} / ${questions.length} 题</small></span></div><p>按关联题最近一次作答统计，反映该组练习的表现。</p><div class="mm-practice-actions">${links.map((l,i) => `<button class="btn small" data-practice="${i}">${esc(l.label)} <span>${l.questions.length} 题</span></button>`).join("")}</div></section>` : ""}`;
+    const n=selected, path=pathOf(n), links=practiceLinks(n), allowed=allowedIds();
+    const kids=(n.children || []).filter(c => canExpandNode(c,allowed)), lockedKids=(n.children || []).length-kids.length;
+    const questions=[...new Map(links.flatMap(l => l.questions).map(q => [q.id,q])).values()], done=questions.filter(q => Store.data.answers[q.id]), correct=done.filter(q => Store.data.answers[q.id].lastOk), pct=done.length ? Math.round(100*correct.length/done.length) : null;
+    panel.innerHTML=`<div class="mm-panel-top"><span class="mm-eyebrow">${kindLabel(n)} · 原笔记导读</span><button data-command="locate" class="mm-panel-locate" title="定位当前节点">定位 ↗</button></div><h3>${esc(n.title)}</h3><nav class="mm-breadcrumb" aria-label="当前知识点路径">${path.map(p => `<button data-jump="${esc(p.id)}">${esc(p.title)}</button>`).join('<span aria-hidden="true">›</span>')}</nav><p class="mm-source">${esc(sourceLabel(n))}</p><div class="mm-notes mm-own-notes">${notesHtml(n)}</div>${traitsHtml(n)}${(n.diagrams || []).map(diagramHtml).join("")}${n.children?.length ? `<section class="mm-child-notes"><h4>下级知识点 <span>${kids.length}</span></h4>${lockedKids ? `<p class="mm-locked-hint">🔒 另有 ${lockedKids} 个下级知识点尚未解锁，随闯关进度逐步开放</p>` : ""}<p class="mm-panel-hint">保留原笔记层级，展开条目阅读完整说明。</p>${kids.map(c => subtreeHtml(c,0,allowed)).join("")}</section>` : ""}<details class="mm-original"><summary>查看本节点原文</summary><div class="mm-raw-notes">${notesHtml(n,true)}</div></details>${links.length ? `<section class="mm-practice"><h4>关联练习</h4><div class="mm-practice-score"><strong>${pct === null ? "尚未作答" : pct+"%"}</strong><span>关联练习正确率<small>已做 ${done.length} / ${questions.length} 题</small></span></div><p>按关联题最近一次作答统计，反映该组练习的表现。</p><div class="mm-practice-actions">${links.map((l,i) => `<button class="btn small" data-practice="${i}">${esc(l.label)} <span>${l.questions.length} 题</span></button>`).join("")}</div></section>` : ""}`;
     panel.querySelectorAll("[data-practice]").forEach(button => button.onclick=() => { const link=links[Number(button.dataset.practice)]; Views.map.cleanup?.(); startQuiz({title:`导图 · ${n.title} · ${link.label}`,questions:link.questions,mode:"practice",back:"#/map"}); });
   }
   function mark(text,tokens) {
@@ -189,15 +222,18 @@ Views.map = function () {
     if (reset) searchPage=0;
     const term=searchInput.value.trim().toLocaleLowerCase(), tokens=term.split(/\s+/).filter(Boolean), results=query("#mmResults"); results.hidden=!tokens.length;
     if (!tokens.length) { results.innerHTML=""; searchHits=[]; return; }
-    const titleOnly=query("#mmSearchMode").value === "title"; searchHits=all.filter(n => tokens.every(t => (n.title+(titleOnly ? "" : " "+(n.notes || []).join(" "))).toLocaleLowerCase().includes(t)));
+    const titleOnly=query("#mmSearchMode").value === "title", allowed=allowedIds();
+    const matched=all.filter(n => tokens.every(t => (n.title+(titleOnly ? "" : " "+(n.notes || []).join(" "))).toLocaleLowerCase().includes(t)));
+    const hiddenLocked=matched.filter(n => !canExpandNode(n,allowed)).length;
+    searchHits=matched.filter(n => canExpandNode(n,allowed));
     const pageSize=8,pages=Math.max(1,Math.ceil(searchHits.length/pageSize)); searchPage=Math.min(searchPage,pages-1);
-    results.innerHTML=`<div class="mm-results-head"><strong>找到 ${searchHits.length} 个${titleOnly ? "节点" : "原笔记条目"}</strong><span>点击结果展开路径并定位</span><button data-command="clearsearch">清除</button></div><div class="mm-result-items">${searchHits.slice(searchPage*pageSize,(searchPage+1)*pageSize).map(n => { const matching=(n.notes || []).find(x => tokens.some(t => x.toLocaleLowerCase().includes(t))) || ""; const snippet=matching.replace(/^\s*(?:#{1,6}\s+|[-*+]\s+|\d+[.)、]\s*)/,"").replace(/\*\*/g,"").replace(/`([^`]+)`/g,"$1"); return `<button class="mm-result" data-jump="${esc(n.id)}"><strong>${mark(n.title,tokens)}</strong>${!titleOnly && matching ? `<span>${mark(snippet,tokens)}</span>` : ""}<small>${esc(pathOf(n).slice(1,-1).map(p => p.title).join(" › "))} · 第 ${n.source?.line || "—"} 行</small></button>`; }).join("") || '<p class="mm-no-results">没有匹配条目。可尝试“矛盾”“度”“思维能力”等原笔记词语。</p>'}</div>${pages > 1 ? `<div class="mm-search-pages"><button data-page="-1" ${searchPage === 0 ? "disabled" : ""}>上一页</button><span>${searchPage+1} / ${pages}</span><button data-page="1" ${searchPage >= pages-1 ? "disabled" : ""}>下一页</button></div>` : ""}`;
+    results.innerHTML=`<div class="mm-results-head"><strong>找到 ${searchHits.length} 个${titleOnly ? "节点" : "原笔记条目"}</strong>${hiddenLocked ? `<span>（另有 ${hiddenLocked} 个结果在未解锁分支）</span>` : ""}<span>点击结果展开路径并定位</span><button data-command="clearsearch">清除</button></div><div class="mm-result-items">${searchHits.slice(searchPage*pageSize,(searchPage+1)*pageSize).map(n => { const matching=(n.notes || []).find(x => tokens.some(t => x.toLocaleLowerCase().includes(t))) || ""; const snippet=matching.replace(/^\s*(?:#{1,6}\s+|[-*+]\s+|\d+[.)、]\s*)/,"").replace(/\*\*/g,"").replace(/`([^`]+)`/g,"$1"); return `<button class="mm-result" data-jump="${esc(n.id)}"><strong>${mark(n.title,tokens)}</strong>${!titleOnly && matching ? `<span>${mark(snippet,tokens)}</span>` : ""}<small>${esc(pathOf(n).slice(1,-1).map(p => p.title).join(" › "))} · 第 ${n.source?.line || "—"} 行</small></button>`; }).join("") || '<p class="mm-no-results">没有匹配条目。可尝试“矛盾”“度”“思维能力”等原笔记词语。</p>'}</div>${pages > 1 ? `<div class="mm-search-pages"><button data-page="-1" ${searchPage === 0 ? "disabled" : ""}>上一页</button><span>${searchPage+1} / ${pages}</span><button data-page="1" ${searchPage >= pages-1 ? "disabled" : ""}>下一页</button></div>` : ""}`;
     query("#mmStatus").textContent=`找到 ${searchHits.length} 个搜索结果`;
   }
   function command(name) {
     if (name === "zoomin") zoom(1.25); if (name === "zoomout") zoom(.8); if (name === "fit") fit();
     if (name === "locate") { if (!positions.has(selected.id)) reveal(selected); centerNode(selected); scrollTreeNode(selected); query(".mm-layout").scrollIntoView({block:"start"}); }
-    if (name === "one") { visible.forEach(n => { if (n.children?.length) manual.add(n.id); }); syncExpanded(); renderTree(); }
+    if (name === "one") { const allowed=allowedIds(); visible.forEach(n => { if (n.children?.length && canExpandNode(n,allowed)) manual.add(n.id); }); syncExpanded(); renderTree(); }
     if (name === "all") { (function open(n) { if (n.children?.length) manual.add(n.id); (n.children || []).forEach(open); })(scope); syncExpanded(); renderTree(); centerNode(selected); }
     if (name === "reset") { manual.clear(); manual.add(scope.id); syncExpanded(); renderTree(); fit(); }
     if (name === "clearsearch") { searchInput.value=""; runSearch(); searchInput.focus(); }

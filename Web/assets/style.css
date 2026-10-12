@@ -539,3 +539,21 @@ p.quote, .quote {
 .vip-countdown { position: relative; height: 34px; border-radius: 999px; background: var(--line); overflow: hidden; margin-top: 16px; }
 .vip-countdown i { display: block; height: 100%; width: 0; background: linear-gradient(90deg, var(--red), var(--gold)); transition: width 5s linear; }
 .vip-countdown span { position: absolute; inset: 0; display: flex; align-items: center; justify-content: center; font-weight: 700; color: var(--ink); }
+
+/* ---- 情景配图（v1.4）：书斋纸感相框 ---- */
+.hero-banner{margin:18px 0 4px;border:1px solid var(--line);border-radius:12px;overflow:hidden;background:var(--card);box-shadow:0 2px 10px rgba(120,84,40,.08);}
+.hero-banner img{display:block;width:100%;height:auto;filter:sepia(.16) saturate(.94);}
+.hero-banner figcaption{display:flex;justify-content:space-between;gap:8px;flex-wrap:wrap;padding:8px 14px;font-size:12.5px;color:var(--mut);}
+.hero-banner figcaption span{opacity:.8;}
+.challenge-intro{overflow:auto;}
+.challenge-figure{float:right;width:172px;margin:2px 0 12px 18px;border:1px solid var(--line);border-radius:10px;overflow:hidden;background:var(--card);box-shadow:0 2px 10px rgba(120,84,40,.08);}
+.challenge-figure img{display:block;width:100%;height:auto;filter:sepia(.12);}
+.challenge-figure figcaption{padding:6px 10px;font-size:12px;line-height:1.55;color:var(--mut);}
+.challenge-figure figcaption span{display:block;opacity:.8;font-size:11px;}
+@media (max-width:700px){.challenge-figure{float:none;width:184px;margin:10px auto;}}
+
+/* ---- 导图锁定态（v1.4）：未解锁分支 ---- */
+.mm-toggle.is-locked{cursor:not-allowed;opacity:.75;}
+.mm-toggle.is-locked rect{fill:#e9e1cd;stroke:#c9bfa8;}
+.mm-outline-toggle.is-locked{cursor:not-allowed;opacity:.65;}
+.mm-locked-hint{margin:8px 0;padding:8px 12px;border:1px dashed var(--line);border-radius:8px;font-size:12.5px;color:var(--mut);background:rgba(201,191,168,.12);}
