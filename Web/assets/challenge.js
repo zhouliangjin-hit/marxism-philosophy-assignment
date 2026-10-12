@@ -33,21 +33,33 @@ const LEVELS = [
 
 const starOf = pct => pct >= 100 ? 3 : pct >= 85 ? 2 : pct >= 60 ? 1 : 0;
 
-Views.challenge = function () {
+/** 闯关进度摘要（供关卡页与导图页共用） */
+function challengeProgress() {
   const d = Store.data;
-  const totalStars = LEVELS.reduce((s, l) => s + ((d.levels[l.id] || {}).stars || 0), 0);
   // 第一个未通关关卡的索引：它本身及其之前全部解锁（首关恒解锁）
   const firstUndone = LEVELS.findIndex(l => !((d.levels[l.id] || {}).stars > 0));
   const unlockedUpTo = firstUndone === -1 ? LEVELS.length : firstUndone + 1;
+  const totalStars = LEVELS.reduce((s, l) => s + ((d.levels[l.id] || {}).stars || 0), 0);
+  return { firstUndone, unlockedUpTo, totalStars };
+}
+
+Views.challenge = function () {
+  const d = Store.data;
+  const { firstUndone, unlockedUpTo, totalStars } = challengeProgress();
+  const vip = typeof VIP !== "undefined" && VIP.get();
 
   $("#view").innerHTML = `
     <h2 class="section-title">闯关模式 <small>CHALLENGE · ${totalStars}/${LEVELS.length * 3} ★</small></h2>
     <p class="muted" style="margin-top:-8px">
       规则：考试模式作答，交卷按正确率评星 —— ≥60% 得 ★ 并解锁下一关、≥85% ★★、满分 ★★★；多选题与期末判分标准一致，少选/多选均不得分。</p>
+    <div style="margin:6px 0 2px">
+      <button class="btn gold small" id="vipUnlockBtn" title="VIP 特权：直接解锁全部关卡试玩（星级仍需实打实考取）">👑 一键解锁全部关卡</button>
+      ${vip ? '<span class="tag gold" style="margin-left:8px">👑 VIP 已解锁全部</span>' : ""}
+    </div>
     <div class="level-path">
       ${LEVELS.map((l, i) => {
         const rec = d.levels[l.id] || { stars: 0, bestPct: 0, plays: 0 };
-        const unlocked = i < unlockedUpTo;
+        const unlocked = i < unlockedUpTo || vip;
         const qn = pickQuestions(l.filter).length;
         const isNext = i === firstUndone; // 当前待攻关卡（脉冲指引）
         return `
@@ -69,9 +81,14 @@ Views.challenge = function () {
       }).join("")}
     </div>`;
 
+  $("#vipUnlockBtn").onclick = () => VIP.require(() => {
+    Views.challenge();
+    toast("👑 VIP 特权：全部关卡已解锁，星级自己考！");
+  }, "unlock");
+
   $$("#view [data-lv]").forEach(btn => btn.onclick = () => {
     const lv = LEVELS[+btn.dataset.lv];
-    if (+btn.dataset.lv >= unlockedUpTo) return;
+    if (+btn.dataset.lv >= unlockedUpTo && !vip) return;
     const qs = pickQuestions(lv.filter);
     startQuiz({
       title: `闯关 · ${lv.name}`,
