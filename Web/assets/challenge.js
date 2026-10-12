@@ -50,11 +50,18 @@ Views.challenge = function () {
 
   $("#view").innerHTML = `
     <h2 class="section-title">闯关模式 <small>CHALLENGE · ${totalStars}/${LEVELS.length * 3} ★</small></h2>
-    <p class="muted" style="margin-top:-8px">
-      规则：考试模式作答，交卷按正确率评星 —— ≥60% 得 ★ 并解锁下一关、≥85% ★★、满分 ★★★；多选题与期末判分标准一致，少选/多选均不得分。</p>
-    <div style="margin:6px 0 2px">
-      <button class="btn gold small" id="vipUnlockBtn" title="VIP 特权：直接解锁全部关卡试玩（星级仍需实打实考取）">👑 一键解锁全部关卡</button>
-      ${vip ? '<span class="tag gold" style="margin-left:8px">👑 VIP 已解锁全部</span>' : ""}
+    <div class="challenge-intro">
+      <figure class="challenge-figure">
+        <img src="${IMG_MANIFESTO}" alt="1848 年《共产党宣言》德文初版扉页" loading="lazy">
+        <figcaption>1848 年《共产党宣言》德文初版扉页<span>图片：UNESCO 世界记忆名录</span></figcaption>
+      </figure>
+      <p class="muted" style="margin-top:-8px">
+        规则：考试模式作答，交卷按正确率评星 —— ≥60% 得 ★ 并解锁下一关、≥85% ★★、满分 ★★★；多选题与期末判分标准一致，少选/多选均不得分。</p>
+      <p class="muted">闯关不仅是刷题 —— 每通过一关，「闯关导图」中对应分支的知识树也会随之解锁展开。</p>
+      <div style="margin:6px 0 2px">
+        <button class="btn gold small" id="vipUnlockBtn" title="VIP 特权：直接解锁全部关卡试玩（星级仍需实打实考取）">👑 一键解锁全部关卡</button>
+        ${vip ? '<span class="tag gold" style="margin-left:8px">👑 VIP 已解锁全部</span>' : ""}
+      </div>
     </div>
     <div class="level-path">
       ${LEVELS.map((l, i) => {

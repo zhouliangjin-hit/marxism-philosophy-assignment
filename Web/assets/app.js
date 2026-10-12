@@ -379,6 +379,10 @@ Views.home = function () {
       <div class="stat-tile"><span class="ic">★</span><div class="num">${stars}</div><div class="lbl">闯关星星</div></div>
     </div>
   </section>
+  <figure class="hero-banner">
+    <img src="${IMG_READING_ROOM}" alt="大英博物馆阅览室全景" loading="lazy">
+    <figcaption>大英博物馆阅览室 —— 马克思曾在此伏案写作《资本论》<span>图片：Wikimedia Commons</span></figcaption>
+  </figure>
 
   <h2 class="section-title">继续学习 <small>CONTINUE</small></h2>
   <div class="next-actions">
