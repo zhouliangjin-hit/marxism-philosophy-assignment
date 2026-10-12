@@ -161,3 +161,30 @@
 @media (prefers-reduced-motion: reduce) { .mm-workspace * { scroll-behavior: auto; } }
 @media (min-width: 601px) and (max-width: 850px) { .mm-negation-process { --mm-flow-arrow: "→"; } }
 @media (max-width: 600px) { .mm-search-field input { font-size: 16px; } }
+
+/* ===== v1.4 闯关导图合并页：闯关进度条 ===== */
+.journey { margin-bottom: 18px; padding: 18px 20px 14px; }
+.journey-head { display: flex; justify-content: space-between; align-items: flex-start; gap: 12px; margin-bottom: 6px; }
+.journey-title { font-family: var(--font-display); font-size: 21px; margin: 2px 0 0; }
+.journey-title em { color: var(--red); font-style: normal; }
+.journey-actions { display: flex; align-items: center; gap: 10px; flex-shrink: 0; }
+.journey-track { display: flex; gap: 4px; overflow-x: auto; padding: 12px 2px 8px; margin: 0; list-style: none; }
+.journey-node { position: relative; flex: 0 0 auto; width: 94px; text-align: center; }
+.journey-node::before { content: ""; position: absolute; top: 24px; left: -50%; width: 100%; height: 2px; background: var(--line); }
+.journey-node:first-child::before { display: none; }
+.journey-node.is-unlocked::before { background: var(--gold); opacity: .6; }
+.journey-dot { position: relative; z-index: 1; display: inline-flex; align-items: center; justify-content: center; width: 42px; height: 42px; border-radius: 50%; background: var(--card); border: 2px solid var(--line-2); font-weight: 700; color: var(--mut); font-size: 14px; }
+.journey-node.is-unlocked .journey-dot { border-color: var(--red); color: var(--red); background: var(--red-soft); }
+.journey-node.is-next .journey-dot { background: var(--red); border-color: var(--red-deep); color: #fff8ed; animation: pulseRing 1.8s ease-out infinite; }
+.journey-name { display: block; font-size: 12px; margin-top: 6px; color: var(--ink-2); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.journey-node.is-locked .journey-name { color: var(--mut); }
+.journey-stars { font-size: 11px; color: var(--gold); letter-spacing: 2px; }
+.journey-stars .off { color: var(--line-2); }
+.journey-hint { font-size: 12.5px; color: var(--mut); margin: 6px 0 0; line-height: 1.7; }
+
+/* ===== v1.4 导图分支色条：0 构成=金 / 1 本体论=蓝 / 2 辩证法=红 ===== */
+.mm-branch-bar { pointer-events: none; }
+.mm-b0 .mm-branch-bar { fill: var(--gold); }
+.mm-b1 .mm-branch-bar { fill: var(--blue); }
+.mm-b2 .mm-branch-bar { fill: var(--red); }
+.mm-scope-node .mm-branch-bar { fill: #fff8ed; opacity: .65; }

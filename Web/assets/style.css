@@ -524,3 +524,18 @@ p.quote, .quote {
   .hbar-row { grid-template-columns: 96px 1fr 64px; }
   .grid[style*="grid-template-columns"] { grid-template-columns: 1fr !important; }
 }
+
+/* ===== v1.4 VIP（整活）弹窗 ===== */
+.vip-badge { display: inline-block; margin-left: 8px; font-size: 11px; font-weight: 700; color: #7a5b12; background: linear-gradient(135deg, #f6e2a8, #e9c46a); border: 1px solid var(--gold); border-radius: 999px; padding: 2px 9px; vertical-align: 2px; letter-spacing: 1px; }
+.vip-overlay { position: fixed; inset: 0; z-index: 200; display: flex; align-items: center; justify-content: center; background: rgba(43, 36, 24, .45); backdrop-filter: blur(3px); -webkit-backdrop-filter: blur(3px); animation: viewIn .25s ease; }
+.vip-card { position: relative; width: min(420px, calc(100vw - 48px)); background: var(--card); border: 1px solid var(--line); border-radius: var(--radius); box-shadow: var(--shadow); padding: 28px 26px 24px; text-align: center; }
+.vip-close { position: absolute; top: 10px; right: 12px; border: 0; background: none; color: var(--mut); font-size: 16px; cursor: pointer; padding: 4px 8px; }
+.vip-close:hover { color: var(--red); }
+.vip-crown { font-size: 44px; line-height: 1; }
+.vip-card h3 { font-family: var(--font-display); font-size: 20px; margin: 10px 0 6px; }
+.vip-desc { font-size: 14px; line-height: 1.9; margin: 0 0 14px; }
+.vip-desc a { color: var(--red); }
+.vip-card .btn { display: block; width: 100%; margin-top: 10px; }
+.vip-countdown { position: relative; height: 34px; border-radius: 999px; background: var(--line); overflow: hidden; margin-top: 16px; }
+.vip-countdown i { display: block; height: 100%; width: 0; background: linear-gradient(90deg, var(--red), var(--gold)); transition: width 5s linear; }
+.vip-countdown span { position: absolute; inset: 0; display: flex; align-items: center; justify-content: center; font-weight: 700; color: var(--ink); }
