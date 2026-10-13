@@ -366,7 +366,7 @@ Views.home = function () {
       <p class="slogan">以思维导图为纲，以题库练习为目；纲举目张，错题归仓，成绩有析。</p>
       <div class="hero-actions">
         <a class="btn primary" href="#/challenge">⚑ 开始闯关</a>
-        <a class="btn" href="#/map">思维导图</a>
+        <a class="btn" href="#/map">闯关导图</a>
         <a class="btn" href="#/practice">顺序刷题</a>
         <a class="btn gold" href="#/about">使用说明</a>
       </div>
@@ -379,6 +379,10 @@ Views.home = function () {
       <div class="stat-tile"><span class="ic">★</span><div class="num">${stars}</div><div class="lbl">闯关星星</div></div>
     </div>
   </section>
+  <figure class="hero-banner">
+    <img src="${IMG_READING_ROOM}" alt="大英博物馆阅览室全景" loading="lazy">
+    <figcaption>大英博物馆阅览室 —— 马克思曾在此伏案写作《资本论》<span>图片：Wikimedia Commons</span></figcaption>
+  </figure>
 
   <h2 class="section-title">继续学习 <small>CONTINUE</small></h2>
   <div class="next-actions">
@@ -396,8 +400,8 @@ Views.home = function () {
     </div>
     <div class="feature-card">
       <div class="fi" style="background:var(--green-soft)">☰</div>
-      <h3>知识体系思维导图</h3>
-      <p>完整保留课程笔记的章节与层级，可搜索知识点、展开分支，并从源笔记跳到关联练习。</p>
+      <h3>闯关同步导图</h3>
+      <p>闯关解锁到哪，导图展开到哪；完整知识树可搜索、折叠，逐节点阅读源笔记并直达关联练习。</p>
       <a class="go" href="#/map">打开导图 →</a>
     </div>
   </div>
@@ -405,7 +409,7 @@ Views.home = function () {
   <h2 class="section-title">功能矩阵 <small>FEATURES</small></h2>
   <div class="feature-grid">
     ${[
-      ["map", "❖", "思维导图", "完整知识树支持搜索与折叠，逐节点阅读源笔记，联动关联题目复习。", "var(--red-soft)"],
+      ["map", "❖", "闯关导图", "闯关进度与知识树同页呈现，导图按解锁进度自动展开，支持搜索折叠与关联练习。", "var(--red-soft)"],
       ["practice", "✎", "顺序刷题", "五大题库顺序/随机练习，即时判分，逐题附详细解析。", "var(--blue-soft)"],
       ["challenge", "⚑", "闯关模式", "十大关卡递进解锁，60/85/100 分线对应一至三星。", "var(--gold-soft)"],
       ["wrong", "☒", "错题本", "答错自动归集，支持按题库筛选、重练与“已掌握”标记。", "var(--red-soft)"],
