@@ -47,23 +47,21 @@ Views.challenge = function () {
   const d = Store.data;
   const { firstUndone, unlockedUpTo, totalStars } = challengeProgress();
   const vip = typeof VIP !== "undefined" && VIP.get();
+  const allUnlocked = vip || unlockedUpTo >= LEVELS.length;
 
   $("#view").innerHTML = `
     <h2 class="section-title">闯关模式 <small>CHALLENGE · ${totalStars}/${LEVELS.length * 3} ★</small></h2>
-    <div class="challenge-intro">
-      <figure class="challenge-figure">
-        <img src="${IMG_MANIFESTO}" alt="1848 年《共产党宣言》德文初版扉页" loading="lazy">
-        <figcaption>1848 年《共产党宣言》德文初版扉页<span>图片：UNESCO 世界记忆名录</span></figcaption>
-      </figure>
-      <p class="muted" style="margin-top:-8px">
-        规则：考试模式作答，交卷按正确率评星 —— ≥60% 得 ★ 并解锁下一关、≥85% ★★、满分 ★★★；多选题与期末判分标准一致，少选/多选均不得分。</p>
-      <p class="muted">闯关不仅是刷题 —— 每通过一关，「闯关导图」中对应分支的知识树也会随之解锁展开。</p>
-      <div style="margin:6px 0 2px">
-        <button class="btn gold small" id="vipUnlockBtn" title="VIP 特权：直接解锁全部关卡试玩（星级仍需实打实考取）">👑 一键解锁全部关卡</button>
-        ${vip ? '<span class="tag gold" style="margin-left:8px">👑 VIP 已解锁全部</span>' : ""}
-      </div>
-    </div>
-    <div class="level-path">
+    <div class="challenge-layout">
+      <div class="challenge-main">
+        <div class="challenge-intro">
+          <p class="muted">
+            规则：考试模式作答，交卷按正确率评星 —— ≥60% 得 ★${vip ? "" : " 并解锁下一关"}、≥85% ★★、满分 ★★★；多选题与期末判分标准一致，少选/多选均不得分。</p>
+          ${vip ? "" : '<p class="muted">闯关不仅是刷题 —— 每通过一关，「闯关导图」中对应分支的知识树也会随之解锁展开。</p>'}
+          <div class="challenge-unlock">
+            <button class="btn gold small" id="vipUnlockBtn" ${allUnlocked ? "disabled" : ""} title="${allUnlocked ? "全部关卡已解锁，星级仍按作答成绩评定" : "VIP 特权：直接解锁全部关卡试玩（星级仍需实打实考取）"}">${allUnlocked ? "全部关卡已解锁" : "👑 一键解锁全部关卡"}</button>
+          </div>
+        </div>
+        <div class="level-path">
       ${LEVELS.map((l, i) => {
         const rec = d.levels[l.id] || { stars: 0, bestPct: 0, plays: 0 };
         const unlocked = i < unlockedUpTo || vip;
@@ -86,12 +84,15 @@ Views.challenge = function () {
           </div>
         </div>`;
       }).join("")}
+        </div>
+      </div>
+      <figure class="challenge-figure">
+        <img src="${IMG_MANIFESTO}" alt="1848 年《共产党宣言》德文初版扉页" loading="lazy">
+        <figcaption>1848 年《共产党宣言》德文初版扉页<span>图片：UNESCO 世界记忆名录</span></figcaption>
+      </figure>
     </div>`;
 
-  $("#vipUnlockBtn").onclick = () => VIP.require(() => {
-    Views.challenge();
-    toast("👑 VIP 特权：全部关卡已解锁，星级自己考！");
-  }, "unlock");
+  if (!allUnlocked) $("#vipUnlockBtn").onclick = () => VIP.require(() => Views.challenge(), "unlock");
 
   $$("#view [data-lv]").forEach(btn => btn.onclick = () => {
     const lv = LEVELS[+btn.dataset.lv];
@@ -102,13 +103,17 @@ Views.challenge = function () {
       questions: qs, mode: "exam", back: "#/challenge",
       onFinish: res => {
         const stars = starOf(res.pct);
-        Store.saveLevel(lv.id, { stars, pct: res.pct });
         const next = LEVELS[+btn.dataset.lv + 1];
+        const nextWasLocked = next && !vip && +btn.dataset.lv + 1 >= challengeProgress().unlockedUpTo;
+        Store.saveLevel(lv.id, { stars, pct: res.pct });
+        const progress = challengeProgress();
+        const newlyUnlocked = nextWasLocked && +btn.dataset.lv + 1 < progress.unlockedUpTo;
+        const success = progress.firstUndone === -1 ? "恭喜通关全部关卡！"
+          : `恭喜通关「${lv.name}」！${next ? `${newlyUnlocked ? "已解锁下一关" : "可继续挑战"}「${next.name}」` : "可返回关卡地图继续挑战"}${stars < 3 ? "，可重刷冲击更高星级" : "，满分太棒了！"}`;
         return {
           stars,
           message: stars
-            ? (next ? `恭喜通关！已解锁下一关「${next.name}」${stars < 3 ? "，可重刷冲击更高星级" : "，满分太棒了！"}`
-                      : "恭喜通关全部关卡！")
+            ? success
             : "未达到 60% 通关线，建议回思维导图查漏补缺后再来。",
         };
       },

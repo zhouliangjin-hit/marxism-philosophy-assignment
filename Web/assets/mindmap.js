@@ -11,8 +11,7 @@ Views.map = function () {
   }
   index(root);
   const branches=root.children || [];
-  const manual=new Set([root.id]);   // 用户手动展开/收起
-  let expanded=new Set();            // 生效集合 = 手动 ∪ 闯关进度自动同步
+  let expanded=new Set();
   /* ---- 闯关进度 → 导图自动展开 ----
      关卡 id → [[分支索引, 展开深度]]；分支索引对应 root.children 顺序：
      0 马克思主义的构成 / 1 本体论 / 2 辩证法（方法论） */
@@ -39,11 +38,8 @@ Views.map = function () {
     });
     return ids;
   }
-  function syncExpanded() {
-    expanded=new Set(manual);
-    for (const id of autoExpandedIds()) expanded.add(id);
-  }
-  syncExpanded();
+  // 闯关进度只初始化展开状态，之后由用户控制折叠，不影响解锁权限。
+  expanded=autoExpandedIds();
   /* ---- 闯关锁定：导图随闯关进度解锁 ----
      每个节点记下"首次解锁它的关卡序号"；未解锁的节点不可手动展开，
      搜索/面板/目录同样不可见。VIP 全部放行（allowedIds 返回 null 表示无限制）。 */
@@ -93,12 +89,12 @@ Views.map = function () {
         + `<span class="journey-stars" aria-label="已获 ${rec.stars} 星">${stars}</span></li>`;
     }).join("");
     return `<section class="journey card" aria-label="闯关进度">
-      <div class="journey-head"><div><span class="mm-eyebrow">闯关进度 · 导图同步展开</span>
+      <div class="journey-head"><div><span class="mm-eyebrow">${vip ? "闯关进度" : "闯关进度 · 导图同步展开"}</span>
       <h2 class="journey-title">知识闯关 <em>同步导图</em></h2></div>
       <div class="journey-actions"><span class="chip">★ ${totalStars}/${LEVELS.length*3}</span>
       <a class="btn small primary" href="#/challenge">进入闯关 →</a></div></div>
       <ol class="journey-track">${items}</ol>
-      <p class="journey-hint">导图分支已按闯关解锁进度自动展开；手动展开/收起依然有效。第 7–9 关（认识论 / 历史观 / 政经）对应后续章节，导图暂未收录。</p>
+      <p class="journey-hint">${vip ? "导图全部分支已开放。" : "导图分支随闯关进度逐步开放。"}第 7–9 关（认识论 / 历史观 / 政经）对应后续章节，导图暂未收录。</p>
     </section>`;
   }
   const pathOf=n => { const path=[n]; while (parents.has(path[0].id)) path.unshift(parents.get(path[0].id)); return path; };
@@ -112,7 +108,7 @@ Views.map = function () {
       <div class="mm-controls"><div class="mm-search-field"><label class="mm-sr-only" for="mmSearch">搜索笔记</label><span aria-hidden="true">⌕</span><input id="mmSearch" type="search" placeholder="搜索知识点或原笔记，例如：人工智能" autocomplete="off"><label class="mm-sr-only" for="mmSearchMode">搜索范围</label><select id="mmSearchMode"><option value="full">全文</option><option value="title">节点</option></select></div><div class="mm-mode" role="group" aria-label="阅读方式"><button data-mode="map" aria-pressed="${mode === "map"}">导图画布</button><button data-mode="outline" aria-pressed="${mode === "outline"}">目录阅读</button></div></div>
       <div class="mm-search-results" id="mmResults" hidden></div>
       <nav class="mm-branches" aria-label="选择知识分支"><button data-scope="${esc(root.id)}" class="is-active" aria-current="true">全章概览 <span>${all.length}</span></button>${branches.map(n => `<button data-scope="${esc(n.id)}">${esc(n.title)} <span>${counts.get(n.id)}</span></button>`).join("")}</nav>
-      <div class="mm-layout"><section class="mm-reader" aria-label="知识树"><div class="mm-reader-head"><div><strong id="mmScopeTitle"></strong><span id="mmVisibleCount"></span></div><div class="mm-expand-tools"><button data-command="one" title="把当前可见分支再展开一级">展开一层</button><button data-command="all" title="一键展开全部节点（VIP 特权；也可通过闯关解锁逐步展开）">👑 全部展开</button><button data-command="reset">收起细节</button></div></div><div class="mm-canvas" id="mmCanvas" ${mode === "map" ? "" : "hidden"}><svg id="mmSvg" role="tree" aria-label="知识点层级树，方向键导航，回车阅读，左右键折叠展开"><g id="mmGraph"></g></svg><div class="mm-zoom-tools" aria-label="画布缩放"><button data-command="zoomout" aria-label="缩小">−</button><output id="mmZoom">100%</output><button data-command="zoomin" aria-label="放大">＋</button><button class="mm-fit" data-command="fit">适应画布</button><button class="mm-fit" data-command="locate">定位选中</button></div><div class="mm-canvas-help">拖动画布 · 滚轮 / 双指缩放 · 点击节点阅读</div></div><div class="mm-outline" id="mmOutline" ${mode === "outline" ? "" : "hidden"} role="tree" aria-label="笔记层级目录"></div><div class="mm-legend"><span><i class="mm-tree-line"></i>连线表示笔记层级</span><span><i class="mm-relation-line"></i>哲学关系另列图示</span><span>标签全文保留，可逐层展开</span></div></section><aside class="mm-panel card" id="mmPanel" aria-label="节点笔记详情"></aside></div>
+      <div class="mm-layout"><section class="mm-reader" aria-label="知识树"><div class="mm-reader-head"><div><strong id="mmScopeTitle"></strong><span id="mmVisibleCount"></span></div><div class="mm-expand-tools"><button data-command="one" title="把当前可见分支再展开一级">展开一层</button><button data-command="all" title="${isVipUser() ? "展开当前分支的全部节点" : "VIP 特权：展开当前分支的全部节点"}">${isVipUser() ? "" : "👑 "}全部展开</button><button data-command="reset">收起细节</button></div></div><div class="mm-canvas" id="mmCanvas" ${mode === "map" ? "" : "hidden"}><svg id="mmSvg" role="tree" aria-label="知识点层级树，方向键导航，回车阅读，左右键折叠展开"><g id="mmGraph"></g></svg><div class="mm-zoom-tools" aria-label="画布缩放"><button data-command="zoomout" aria-label="缩小">−</button><output id="mmZoom">100%</output><button data-command="zoomin" aria-label="放大">＋</button><button class="mm-fit" data-command="fit">适应画布</button><button class="mm-fit" data-command="locate">定位选中</button></div><div class="mm-canvas-help">拖动画布 · 滚轮 / 双指缩放 · 点击节点阅读</div></div><div class="mm-outline" id="mmOutline" ${mode === "outline" ? "" : "hidden"} role="tree" aria-label="笔记层级目录"></div><div class="mm-legend"><span><i class="mm-tree-line"></i>连线表示笔记层级</span><span><i class="mm-relation-line"></i>哲学关系另列图示</span><span>标签全文保留，可逐层展开</span></div></section><aside class="mm-panel card" id="mmPanel" aria-label="节点笔记详情"></aside></div>
       <div class="mm-status mm-sr-only" role="status" aria-live="polite" id="mmStatus"></div>
     </section>`;
   const shell=$(".mm-workspace"), query=(selector,el=shell) => el.querySelector(selector), svg=query("#mmSvg"), graph=query("#mmGraph"), canvas=query("#mmCanvas"), outline=query("#mmOutline"), panel=query("#mmPanel"), searchInput=query("#mmSearch");
@@ -152,7 +148,7 @@ Views.map = function () {
   function fit() { if (canvas.hidden || !canvas.clientWidth || disposed) return; const width=canvas.clientWidth-56,height=canvas.clientHeight-112; cam.k=Math.min(1.12,Math.max(.08,Math.min(width/bounds.width,height/bounds.height))); cam.x=(canvas.clientWidth-bounds.width*cam.k)/2; cam.y=24+(height-bounds.height*cam.k)/2; applyCam(); }
   function centerNode(n,readable=true) { const p=positions.get(n.id); if (!p || canvas.hidden) return; if (readable) cam.k=Math.max(.85,Math.min(1.2,cam.k)); cam.x=canvas.clientWidth/2-(p.x+p.width/2)*cam.k; cam.y=(canvas.clientHeight-65)/2-(p.y+p.height/2)*cam.k; applyCam(); }
   function zoom(factor,x=canvas.clientWidth/2,y=canvas.clientHeight/2) { const k=Math.min(3,Math.max(.08,cam.k*factor)); cam.x=x-(x-cam.x)*k/cam.k; cam.y=y-(y-cam.y)*k/cam.k; cam.k=k; applyCam(); }
-  function setScope(n,select=true) { scope=n; manual.clear(); manual.add(n.id); syncExpanded(); shell.querySelectorAll("[data-scope]").forEach(btn => { const active=btn.dataset.scope === n.id; btn.classList.toggle("is-active",active); if (active) btn.setAttribute("aria-current","true"); else btn.removeAttribute("aria-current"); }); if (select) selected=n; renderTree(); renderPanel(); fit(); }
+  function setScope(n,select=true) { scope=n; expanded=autoExpandedIds(); expanded.add(n.id); shell.querySelectorAll("[data-scope]").forEach(btn => { const active=btn.dataset.scope === n.id; btn.classList.toggle("is-active",active); if (active) btn.setAttribute("aria-current","true"); else btn.removeAttribute("aria-current"); }); if (select) selected=n; renderTree(); renderPanel(); fit(); }
   function selectNode(n) { selected=n; renderTree(); renderPanel(); panel.scrollTop=0; query("#mmStatus").textContent=`正在阅读：${n.title}`; }
   function focusTreeNode(n,toggleControl=false) {
     const container=mode === "map" ? graph : outline;
@@ -168,9 +164,8 @@ Views.map = function () {
     if (scope.id !== targetScope.id) setScope(targetScope,false);
     const allowed=allowedIds();
     let blocked=false;
-    for (const p of path) { if (canExpandNode(p,allowed)) manual.add(p.id); else blocked=true; }
+    for (const p of path) { if (canExpandNode(p,allowed)) expanded.add(p.id); else blocked=true; }
     if (blocked) { lockHint(n); return; }
-    syncExpanded();
     selectNode(n); centerNode(n); scrollTreeNode(n);
     query(".mm-layout").scrollIntoView({block:"start"});
     query("#mmStatus").textContent=`已定位：${path.map(p => p.title).join("，")}`;
@@ -178,8 +173,8 @@ Views.map = function () {
   function toggle(n) {
     if (!n.children?.length) return;
     if (!canExpandNode(n,allowedIds())) { lockHint(n); return; }
-    manual.has(n.id) ? manual.delete(n.id) : manual.add(n.id);
-    syncExpanded(); renderTree();
+    expanded.has(n.id) ? expanded.delete(n.id) : expanded.add(n.id);
+    renderTree();
   }
   // 仅按节点具体主题关联练习，大类和根节点的题库不会被子节点自动继承。
   function practiceLinks(n) {
@@ -231,11 +226,12 @@ Views.map = function () {
     query("#mmStatus").textContent=`找到 ${searchHits.length} 个搜索结果`;
   }
   function command(name) {
+    if (disposed) return;
     if (name === "zoomin") zoom(1.25); if (name === "zoomout") zoom(.8); if (name === "fit") fit();
     if (name === "locate") { if (!positions.has(selected.id)) reveal(selected); centerNode(selected); scrollTreeNode(selected); query(".mm-layout").scrollIntoView({block:"start"}); }
-    if (name === "one") { const allowed=allowedIds(); visible.forEach(n => { if (n.children?.length && canExpandNode(n,allowed)) manual.add(n.id); }); syncExpanded(); renderTree(); }
-    if (name === "all") { (function open(n) { if (n.children?.length) manual.add(n.id); (n.children || []).forEach(open); })(scope); syncExpanded(); renderTree(); centerNode(selected); }
-    if (name === "reset") { manual.clear(); manual.add(scope.id); syncExpanded(); renderTree(); fit(); }
+    if (name === "one") { const allowed=allowedIds(); visible.forEach(n => { if (n.children?.length && canExpandNode(n,allowed)) expanded.add(n.id); }); renderTree(); }
+    if (name === "all") { (function open(n) { if (n.children?.length) expanded.add(n.id); (n.children || []).forEach(open); })(scope); renderTree(); centerNode(selected); }
+    if (name === "reset") { expanded=new Set([scope.id]); renderTree(); fit(); }
     if (name === "clearsearch") { searchInput.value=""; runSearch(); searchInput.focus(); }
   }
   listen(shell,"click",event => {
@@ -250,6 +246,14 @@ Views.map = function () {
       else command(button.dataset.command);
     }
     else if (button.dataset.page) { searchPage+=Number(button.dataset.page); runSearch(false); }
+  });
+  listen(document,"vipchange",() => {
+    const journey=$(".journey");
+    if (journey) journey.outerHTML=journeyHtml();
+    const expandAll=query('[data-command="all"]');
+    expandAll.textContent="全部展开";
+    expandAll.title="展开当前分支的全部节点";
+    renderTree(); renderPanel(); runSearch(false);
   });
   listen(searchInput,"input",() => runSearch()); listen(query("#mmSearchMode"),"change",() => runSearch());
   listen(searchInput,"keydown",event => { if (event.key === "Enter" && searchHits.length && searchInput.value.trim()) { event.preventDefault(); reveal(searchHits[searchPage*8]); } if (event.key === "Escape") command("clearsearch"); });

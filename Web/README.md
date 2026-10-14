@@ -43,6 +43,14 @@ python -X utf8 -m unittest discover -s Web/tools -p "test_*.py"
 node Web/tools/test_runtime.js
 ```
 
+VIP 与导图交互的浏览器回归测试需要维护者环境安装 Playwright；Windows 默认使用已安装的 Edge，其他环境可通过 `PLAYWRIGHT_CHANNEL` 指定浏览器：
+
+```powershell
+node Web/tools/test_vip_browser.js
+```
+
+测试直接打开两个离线版本，使用独立浏览器会话验证折叠、解锁权限、开通方式、按钮禁用和结果提示，不使用日常浏览器中的学习记录。可通过 `MAYUAN_TEST_SCREENSHOTS` 指定截图输出目录。
+
 ## 数据与使用约定
 
 客观题 125 道（判断 1、单选 83、多选 41）、主观题 7 道、五个题库。试卷与解析来自回忆版与公益整理，仅供复习，禁止售卖。

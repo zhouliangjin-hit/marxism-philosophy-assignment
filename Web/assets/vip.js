@@ -11,14 +11,18 @@
 const VIP = {
   KEY: "mayuan.vip.v1",
   REPO_URL: "https://github.com/zhouliangjin-hit/marxism-philosophy-assignment",
+  active: false,
   get() {
+    if (this.active) return true;
     try { return JSON.parse(localStorage.getItem(this.KEY) || "{}").vip === true; }
     catch { return false; }
   },
   grant() {
+    this.active = true;
     try { localStorage.setItem(this.KEY, JSON.stringify({ vip: true, ts: Date.now() })); } catch { /* 忽略 */ }
     document.body.classList.add("is-vip");
     this.badge();
+    document.dispatchEvent(new Event("vipchange"));
   },
   /** 需要 VIP 的动作：已是 VIP 直接执行，否则走开通流程，成功后执行原动作 */
   require(action, benefit) {

@@ -204,6 +204,7 @@ html[data-theme="dark"] .theme-toggle::before { content: "☀"; }
 .btn.small { padding: 5px 13px; font-size: 12.5px; }
 .btn:active { transform: translateY(0) scale(.97); }
 .btn:disabled { opacity: .45; cursor: not-allowed; transform: none; box-shadow: none; }
+#vipUnlockBtn:disabled { background: var(--card-2); border-color: var(--line-2); color: var(--mut); opacity: 1; filter: grayscale(1); }
 .chip {
   display: inline-flex; align-items: center; gap: 5px;
   background: var(--card-2); border: 1px solid var(--line); color: var(--ink-2);
@@ -428,9 +429,9 @@ html[data-theme="dark"] .hero-portrait { filter: invert(.92); opacity: .17; }
   opacity: .45;
 }
 /* 当前待攻关卡：节点填朱并发出脉冲光环，引导玩家 */
-.level-item.next .level-node {
-  background: linear-gradient(135deg, var(--red), var(--red-deep));
-  color: #fff6ea; border-color: var(--red);
+.level-item.next.unlocked .level-node {
+  background: var(--red-deep);
+  color: #fff; border-color: var(--red-deep);
   animation: pulseRing 1.8s ease-out infinite;
 }
 @keyframes pulseRing {
@@ -553,12 +554,19 @@ p.quote, .quote {
 .hero-banner img{display:block;width:100%;height:auto;filter:sepia(.16) saturate(.94);}
 .hero-banner figcaption{display:flex;justify-content:space-between;gap:8px;flex-wrap:wrap;padding:8px 14px;font-size:12.5px;color:var(--mut);}
 .hero-banner figcaption span{opacity:.8;}
-.challenge-intro{overflow:auto;}
-.challenge-figure{float:right;width:172px;margin:2px 0 12px 18px;border:1px solid var(--line);border-radius:10px;overflow:hidden;background:var(--card);box-shadow:0 2px 10px rgba(120,84,40,.08);}
+.challenge-layout{display:grid;grid-template-columns:minmax(0,1fr) 172px;gap:28px;align-items:start;}
+.challenge-main{min-width:0;}
+.challenge-intro{margin-bottom:14px;}
+.challenge-intro p{margin:0 0 10px;}
+.challenge-unlock{margin-top:6px;}
+.challenge-figure{width:172px;margin:0;border:1px solid var(--line);border-radius:10px;overflow:hidden;background:var(--card);box-shadow:0 2px 10px rgba(120,84,40,.08);}
 .challenge-figure img{display:block;width:100%;height:auto;filter:sepia(.12);}
 .challenge-figure figcaption{padding:6px 10px;font-size:12px;line-height:1.55;color:var(--mut);}
 .challenge-figure figcaption span{display:block;opacity:.8;font-size:11px;}
-@media (max-width:700px){.challenge-figure{float:none;width:184px;margin:10px auto;}}
+@media (max-width:700px){
+  .challenge-layout{grid-template-columns:minmax(0,1fr);gap:16px;}
+  .challenge-figure{order:-1;width:184px;justify-self:center;}
+}
 
 /* ---- 导图锁定态（v1.4）：未解锁分支 ---- */
 .mm-toggle.is-locked{cursor:not-allowed;opacity:.75;}
@@ -1169,6 +1177,7 @@ function route() {
 /* ================= 首页 ================= */
 Views.home = function () {
   const d = Store.data;
+  const vip = typeof VIP !== "undefined" && VIP.get();
   const totalDone = d.attempts.length;
   const totalOk = d.attempts.filter(a => a.ok).length;
   const pct = totalDone ? Math.round(100 * totalOk / totalDone) : 0;
@@ -1225,7 +1234,7 @@ Views.home = function () {
     <div class="feature-card">
       <div class="fi" style="background:var(--green-soft)">☰</div>
       <h3>闯关同步导图</h3>
-      <p>闯关解锁到哪，导图展开到哪；完整知识树可搜索、折叠，逐节点阅读源笔记并直达关联练习。</p>
+      <p>${vip ? "完整知识树已开放，可搜索、折叠，逐节点阅读源笔记并直达关联练习。" : "闯关解锁到哪，导图展开到哪；完整知识树可搜索、折叠，逐节点阅读源笔记并直达关联练习。"}</p>
       <a class="go" href="#/map">打开导图 →</a>
     </div>
   </div>
@@ -1233,9 +1242,9 @@ Views.home = function () {
   <h2 class="section-title">功能矩阵 <small>FEATURES</small></h2>
   <div class="feature-grid">
     ${[
-      ["map", "❖", "闯关导图", "闯关进度与知识树同页呈现，导图按解锁进度自动展开，支持搜索折叠与关联练习。", "var(--red-soft)"],
+      ["map", "❖", "闯关导图", vip ? "闯关进度与完整知识树同页呈现，全部分支已开放。" : "闯关进度与知识树同页呈现，导图按解锁进度自动展开，支持搜索折叠与关联练习。", "var(--red-soft)"],
       ["practice", "✎", "顺序刷题", "五大题库顺序/随机练习，即时判分，逐题附详细解析。", "var(--blue-soft)"],
-      ["challenge", "⚑", "闯关模式", "十大关卡递进解锁，60/85/100 分线对应一至三星。", "var(--gold-soft)"],
+      ["challenge", "⚑", "闯关模式", `${vip ? "十大关卡均可挑战" : "十大关卡递进解锁"}，60/85/100 分线对应一至三星。`, "var(--gold-soft)"],
       ["wrong", "☒", "错题本", "答错自动归集，支持按题库筛选、重练与“已掌握”标记。", "var(--red-soft)"],
       ["stats", "▤", "成绩分析", "作答趋势、题库与题型正确率、薄弱知识点一网打尽。", "var(--green-soft)"],
       ["subjective", "✦", "主观题精讲", "简答/辨析/论述附参考答案与评分要点，自评掌握度。", "var(--blue-soft)"],
@@ -1425,14 +1434,18 @@ if (document.readyState === "loading") {
 const VIP = {
   KEY: "mayuan.vip.v1",
   REPO_URL: "https://github.com/zhouliangjin-hit/marxism-philosophy-assignment",
+  active: false,
   get() {
+    if (this.active) return true;
     try { return JSON.parse(localStorage.getItem(this.KEY) || "{}").vip === true; }
     catch { return false; }
   },
   grant() {
+    this.active = true;
     try { localStorage.setItem(this.KEY, JSON.stringify({ vip: true, ts: Date.now() })); } catch { /* 忽略 */ }
     document.body.classList.add("is-vip");
     this.badge();
+    document.dispatchEvent(new Event("vipchange"));
   },
   /** 需要 VIP 的动作：已是 VIP 直接执行，否则走开通流程，成功后执行原动作 */
   require(action, benefit) {
@@ -1804,8 +1817,7 @@ Views.map = function () {
   }
   index(root);
   const branches=root.children || [];
-  const manual=new Set([root.id]);   // 用户手动展开/收起
-  let expanded=new Set();            // 生效集合 = 手动 ∪ 闯关进度自动同步
+  let expanded=new Set();
   /* ---- 闯关进度 → 导图自动展开 ----
      关卡 id → [[分支索引, 展开深度]]；分支索引对应 root.children 顺序：
      0 马克思主义的构成 / 1 本体论 / 2 辩证法（方法论） */
@@ -1832,11 +1844,8 @@ Views.map = function () {
     });
     return ids;
   }
-  function syncExpanded() {
-    expanded=new Set(manual);
-    for (const id of autoExpandedIds()) expanded.add(id);
-  }
-  syncExpanded();
+  // 闯关进度只初始化展开状态，之后由用户控制折叠，不影响解锁权限。
+  expanded=autoExpandedIds();
   /* ---- 闯关锁定：导图随闯关进度解锁 ----
      每个节点记下"首次解锁它的关卡序号"；未解锁的节点不可手动展开，
      搜索/面板/目录同样不可见。VIP 全部放行（allowedIds 返回 null 表示无限制）。 */
@@ -1886,12 +1895,12 @@ Views.map = function () {
         + `<span class="journey-stars" aria-label="已获 ${rec.stars} 星">${stars}</span></li>`;
     }).join("");
     return `<section class="journey card" aria-label="闯关进度">
-      <div class="journey-head"><div><span class="mm-eyebrow">闯关进度 · 导图同步展开</span>
+      <div class="journey-head"><div><span class="mm-eyebrow">${vip ? "闯关进度" : "闯关进度 · 导图同步展开"}</span>
       <h2 class="journey-title">知识闯关 <em>同步导图</em></h2></div>
       <div class="journey-actions"><span class="chip">★ ${totalStars}/${LEVELS.length*3}</span>
       <a class="btn small primary" href="#/challenge">进入闯关 →</a></div></div>
       <ol class="journey-track">${items}</ol>
-      <p class="journey-hint">导图分支已按闯关解锁进度自动展开；手动展开/收起依然有效。第 7–9 关（认识论 / 历史观 / 政经）对应后续章节，导图暂未收录。</p>
+      <p class="journey-hint">${vip ? "导图全部分支已开放。" : "导图分支随闯关进度逐步开放。"}第 7–9 关（认识论 / 历史观 / 政经）对应后续章节，导图暂未收录。</p>
     </section>`;
   }
   const pathOf=n => { const path=[n]; while (parents.has(path[0].id)) path.unshift(parents.get(path[0].id)); return path; };
@@ -1905,7 +1914,7 @@ Views.map = function () {
       <div class="mm-controls"><div class="mm-search-field"><label class="mm-sr-only" for="mmSearch">搜索笔记</label><span aria-hidden="true">⌕</span><input id="mmSearch" type="search" placeholder="搜索知识点或原笔记，例如：人工智能" autocomplete="off"><label class="mm-sr-only" for="mmSearchMode">搜索范围</label><select id="mmSearchMode"><option value="full">全文</option><option value="title">节点</option></select></div><div class="mm-mode" role="group" aria-label="阅读方式"><button data-mode="map" aria-pressed="${mode === "map"}">导图画布</button><button data-mode="outline" aria-pressed="${mode === "outline"}">目录阅读</button></div></div>
       <div class="mm-search-results" id="mmResults" hidden></div>
       <nav class="mm-branches" aria-label="选择知识分支"><button data-scope="${esc(root.id)}" class="is-active" aria-current="true">全章概览 <span>${all.length}</span></button>${branches.map(n => `<button data-scope="${esc(n.id)}">${esc(n.title)} <span>${counts.get(n.id)}</span></button>`).join("")}</nav>
-      <div class="mm-layout"><section class="mm-reader" aria-label="知识树"><div class="mm-reader-head"><div><strong id="mmScopeTitle"></strong><span id="mmVisibleCount"></span></div><div class="mm-expand-tools"><button data-command="one" title="把当前可见分支再展开一级">展开一层</button><button data-command="all" title="一键展开全部节点（VIP 特权；也可通过闯关解锁逐步展开）">👑 全部展开</button><button data-command="reset">收起细节</button></div></div><div class="mm-canvas" id="mmCanvas" ${mode === "map" ? "" : "hidden"}><svg id="mmSvg" role="tree" aria-label="知识点层级树，方向键导航，回车阅读，左右键折叠展开"><g id="mmGraph"></g></svg><div class="mm-zoom-tools" aria-label="画布缩放"><button data-command="zoomout" aria-label="缩小">−</button><output id="mmZoom">100%</output><button data-command="zoomin" aria-label="放大">＋</button><button class="mm-fit" data-command="fit">适应画布</button><button class="mm-fit" data-command="locate">定位选中</button></div><div class="mm-canvas-help">拖动画布 · 滚轮 / 双指缩放 · 点击节点阅读</div></div><div class="mm-outline" id="mmOutline" ${mode === "outline" ? "" : "hidden"} role="tree" aria-label="笔记层级目录"></div><div class="mm-legend"><span><i class="mm-tree-line"></i>连线表示笔记层级</span><span><i class="mm-relation-line"></i>哲学关系另列图示</span><span>标签全文保留，可逐层展开</span></div></section><aside class="mm-panel card" id="mmPanel" aria-label="节点笔记详情"></aside></div>
+      <div class="mm-layout"><section class="mm-reader" aria-label="知识树"><div class="mm-reader-head"><div><strong id="mmScopeTitle"></strong><span id="mmVisibleCount"></span></div><div class="mm-expand-tools"><button data-command="one" title="把当前可见分支再展开一级">展开一层</button><button data-command="all" title="${isVipUser() ? "展开当前分支的全部节点" : "VIP 特权：展开当前分支的全部节点"}">${isVipUser() ? "" : "👑 "}全部展开</button><button data-command="reset">收起细节</button></div></div><div class="mm-canvas" id="mmCanvas" ${mode === "map" ? "" : "hidden"}><svg id="mmSvg" role="tree" aria-label="知识点层级树，方向键导航，回车阅读，左右键折叠展开"><g id="mmGraph"></g></svg><div class="mm-zoom-tools" aria-label="画布缩放"><button data-command="zoomout" aria-label="缩小">−</button><output id="mmZoom">100%</output><button data-command="zoomin" aria-label="放大">＋</button><button class="mm-fit" data-command="fit">适应画布</button><button class="mm-fit" data-command="locate">定位选中</button></div><div class="mm-canvas-help">拖动画布 · 滚轮 / 双指缩放 · 点击节点阅读</div></div><div class="mm-outline" id="mmOutline" ${mode === "outline" ? "" : "hidden"} role="tree" aria-label="笔记层级目录"></div><div class="mm-legend"><span><i class="mm-tree-line"></i>连线表示笔记层级</span><span><i class="mm-relation-line"></i>哲学关系另列图示</span><span>标签全文保留，可逐层展开</span></div></section><aside class="mm-panel card" id="mmPanel" aria-label="节点笔记详情"></aside></div>
       <div class="mm-status mm-sr-only" role="status" aria-live="polite" id="mmStatus"></div>
     </section>`;
   const shell=$(".mm-workspace"), query=(selector,el=shell) => el.querySelector(selector), svg=query("#mmSvg"), graph=query("#mmGraph"), canvas=query("#mmCanvas"), outline=query("#mmOutline"), panel=query("#mmPanel"), searchInput=query("#mmSearch");
@@ -1945,7 +1954,7 @@ Views.map = function () {
   function fit() { if (canvas.hidden || !canvas.clientWidth || disposed) return; const width=canvas.clientWidth-56,height=canvas.clientHeight-112; cam.k=Math.min(1.12,Math.max(.08,Math.min(width/bounds.width,height/bounds.height))); cam.x=(canvas.clientWidth-bounds.width*cam.k)/2; cam.y=24+(height-bounds.height*cam.k)/2; applyCam(); }
   function centerNode(n,readable=true) { const p=positions.get(n.id); if (!p || canvas.hidden) return; if (readable) cam.k=Math.max(.85,Math.min(1.2,cam.k)); cam.x=canvas.clientWidth/2-(p.x+p.width/2)*cam.k; cam.y=(canvas.clientHeight-65)/2-(p.y+p.height/2)*cam.k; applyCam(); }
   function zoom(factor,x=canvas.clientWidth/2,y=canvas.clientHeight/2) { const k=Math.min(3,Math.max(.08,cam.k*factor)); cam.x=x-(x-cam.x)*k/cam.k; cam.y=y-(y-cam.y)*k/cam.k; cam.k=k; applyCam(); }
-  function setScope(n,select=true) { scope=n; manual.clear(); manual.add(n.id); syncExpanded(); shell.querySelectorAll("[data-scope]").forEach(btn => { const active=btn.dataset.scope === n.id; btn.classList.toggle("is-active",active); if (active) btn.setAttribute("aria-current","true"); else btn.removeAttribute("aria-current"); }); if (select) selected=n; renderTree(); renderPanel(); fit(); }
+  function setScope(n,select=true) { scope=n; expanded=autoExpandedIds(); expanded.add(n.id); shell.querySelectorAll("[data-scope]").forEach(btn => { const active=btn.dataset.scope === n.id; btn.classList.toggle("is-active",active); if (active) btn.setAttribute("aria-current","true"); else btn.removeAttribute("aria-current"); }); if (select) selected=n; renderTree(); renderPanel(); fit(); }
   function selectNode(n) { selected=n; renderTree(); renderPanel(); panel.scrollTop=0; query("#mmStatus").textContent=`正在阅读：${n.title}`; }
   function focusTreeNode(n,toggleControl=false) {
     const container=mode === "map" ? graph : outline;
@@ -1961,9 +1970,8 @@ Views.map = function () {
     if (scope.id !== targetScope.id) setScope(targetScope,false);
     const allowed=allowedIds();
     let blocked=false;
-    for (const p of path) { if (canExpandNode(p,allowed)) manual.add(p.id); else blocked=true; }
+    for (const p of path) { if (canExpandNode(p,allowed)) expanded.add(p.id); else blocked=true; }
     if (blocked) { lockHint(n); return; }
-    syncExpanded();
     selectNode(n); centerNode(n); scrollTreeNode(n);
     query(".mm-layout").scrollIntoView({block:"start"});
     query("#mmStatus").textContent=`已定位：${path.map(p => p.title).join("，")}`;
@@ -1971,8 +1979,8 @@ Views.map = function () {
   function toggle(n) {
     if (!n.children?.length) return;
     if (!canExpandNode(n,allowedIds())) { lockHint(n); return; }
-    manual.has(n.id) ? manual.delete(n.id) : manual.add(n.id);
-    syncExpanded(); renderTree();
+    expanded.has(n.id) ? expanded.delete(n.id) : expanded.add(n.id);
+    renderTree();
   }
   // 仅按节点具体主题关联练习，大类和根节点的题库不会被子节点自动继承。
   function practiceLinks(n) {
@@ -2024,11 +2032,12 @@ Views.map = function () {
     query("#mmStatus").textContent=`找到 ${searchHits.length} 个搜索结果`;
   }
   function command(name) {
+    if (disposed) return;
     if (name === "zoomin") zoom(1.25); if (name === "zoomout") zoom(.8); if (name === "fit") fit();
     if (name === "locate") { if (!positions.has(selected.id)) reveal(selected); centerNode(selected); scrollTreeNode(selected); query(".mm-layout").scrollIntoView({block:"start"}); }
-    if (name === "one") { const allowed=allowedIds(); visible.forEach(n => { if (n.children?.length && canExpandNode(n,allowed)) manual.add(n.id); }); syncExpanded(); renderTree(); }
-    if (name === "all") { (function open(n) { if (n.children?.length) manual.add(n.id); (n.children || []).forEach(open); })(scope); syncExpanded(); renderTree(); centerNode(selected); }
-    if (name === "reset") { manual.clear(); manual.add(scope.id); syncExpanded(); renderTree(); fit(); }
+    if (name === "one") { const allowed=allowedIds(); visible.forEach(n => { if (n.children?.length && canExpandNode(n,allowed)) expanded.add(n.id); }); renderTree(); }
+    if (name === "all") { (function open(n) { if (n.children?.length) expanded.add(n.id); (n.children || []).forEach(open); })(scope); renderTree(); centerNode(selected); }
+    if (name === "reset") { expanded=new Set([scope.id]); renderTree(); fit(); }
     if (name === "clearsearch") { searchInput.value=""; runSearch(); searchInput.focus(); }
   }
   listen(shell,"click",event => {
@@ -2043,6 +2052,14 @@ Views.map = function () {
       else command(button.dataset.command);
     }
     else if (button.dataset.page) { searchPage+=Number(button.dataset.page); runSearch(false); }
+  });
+  listen(document,"vipchange",() => {
+    const journey=$(".journey");
+    if (journey) journey.outerHTML=journeyHtml();
+    const expandAll=query('[data-command="all"]');
+    expandAll.textContent="全部展开";
+    expandAll.title="展开当前分支的全部节点";
+    renderTree(); renderPanel(); runSearch(false);
   });
   listen(searchInput,"input",() => runSearch()); listen(query("#mmSearchMode"),"change",() => runSearch());
   listen(searchInput,"keydown",event => { if (event.key === "Enter" && searchHits.length && searchInput.value.trim()) { event.preventDefault(); reveal(searchHits[searchPage*8]); } if (event.key === "Escape") command("clearsearch"); });
@@ -2122,23 +2139,21 @@ Views.challenge = function () {
   const d = Store.data;
   const { firstUndone, unlockedUpTo, totalStars } = challengeProgress();
   const vip = typeof VIP !== "undefined" && VIP.get();
+  const allUnlocked = vip || unlockedUpTo >= LEVELS.length;
 
   $("#view").innerHTML = `
     <h2 class="section-title">闯关模式 <small>CHALLENGE · ${totalStars}/${LEVELS.length * 3} ★</small></h2>
-    <div class="challenge-intro">
-      <figure class="challenge-figure">
-        <img src="${IMG_MANIFESTO}" alt="1848 年《共产党宣言》德文初版扉页" loading="lazy">
-        <figcaption>1848 年《共产党宣言》德文初版扉页<span>图片：UNESCO 世界记忆名录</span></figcaption>
-      </figure>
-      <p class="muted" style="margin-top:-8px">
-        规则：考试模式作答，交卷按正确率评星 —— ≥60% 得 ★ 并解锁下一关、≥85% ★★、满分 ★★★；多选题与期末判分标准一致，少选/多选均不得分。</p>
-      <p class="muted">闯关不仅是刷题 —— 每通过一关，「闯关导图」中对应分支的知识树也会随之解锁展开。</p>
-      <div style="margin:6px 0 2px">
-        <button class="btn gold small" id="vipUnlockBtn" title="VIP 特权：直接解锁全部关卡试玩（星级仍需实打实考取）">👑 一键解锁全部关卡</button>
-        ${vip ? '<span class="tag gold" style="margin-left:8px">👑 VIP 已解锁全部</span>' : ""}
-      </div>
-    </div>
-    <div class="level-path">
+    <div class="challenge-layout">
+      <div class="challenge-main">
+        <div class="challenge-intro">
+          <p class="muted">
+            规则：考试模式作答，交卷按正确率评星 —— ≥60% 得 ★${vip ? "" : " 并解锁下一关"}、≥85% ★★、满分 ★★★；多选题与期末判分标准一致，少选/多选均不得分。</p>
+          ${vip ? "" : '<p class="muted">闯关不仅是刷题 —— 每通过一关，「闯关导图」中对应分支的知识树也会随之解锁展开。</p>'}
+          <div class="challenge-unlock">
+            <button class="btn gold small" id="vipUnlockBtn" ${allUnlocked ? "disabled" : ""} title="${allUnlocked ? "全部关卡已解锁，星级仍按作答成绩评定" : "VIP 特权：直接解锁全部关卡试玩（星级仍需实打实考取）"}">${allUnlocked ? "全部关卡已解锁" : "👑 一键解锁全部关卡"}</button>
+          </div>
+        </div>
+        <div class="level-path">
       ${LEVELS.map((l, i) => {
         const rec = d.levels[l.id] || { stars: 0, bestPct: 0, plays: 0 };
         const unlocked = i < unlockedUpTo || vip;
@@ -2161,12 +2176,15 @@ Views.challenge = function () {
           </div>
         </div>`;
       }).join("")}
+        </div>
+      </div>
+      <figure class="challenge-figure">
+        <img src="${IMG_MANIFESTO}" alt="1848 年《共产党宣言》德文初版扉页" loading="lazy">
+        <figcaption>1848 年《共产党宣言》德文初版扉页<span>图片：UNESCO 世界记忆名录</span></figcaption>
+      </figure>
     </div>`;
 
-  $("#vipUnlockBtn").onclick = () => VIP.require(() => {
-    Views.challenge();
-    toast("👑 VIP 特权：全部关卡已解锁，星级自己考！");
-  }, "unlock");
+  if (!allUnlocked) $("#vipUnlockBtn").onclick = () => VIP.require(() => Views.challenge(), "unlock");
 
   $$("#view [data-lv]").forEach(btn => btn.onclick = () => {
     const lv = LEVELS[+btn.dataset.lv];
@@ -2177,13 +2195,17 @@ Views.challenge = function () {
       questions: qs, mode: "exam", back: "#/challenge",
       onFinish: res => {
         const stars = starOf(res.pct);
-        Store.saveLevel(lv.id, { stars, pct: res.pct });
         const next = LEVELS[+btn.dataset.lv + 1];
+        const nextWasLocked = next && !vip && +btn.dataset.lv + 1 >= challengeProgress().unlockedUpTo;
+        Store.saveLevel(lv.id, { stars, pct: res.pct });
+        const progress = challengeProgress();
+        const newlyUnlocked = nextWasLocked && +btn.dataset.lv + 1 < progress.unlockedUpTo;
+        const success = progress.firstUndone === -1 ? "恭喜通关全部关卡！"
+          : `恭喜通关「${lv.name}」！${next ? `${newlyUnlocked ? "已解锁下一关" : "可继续挑战"}「${next.name}」` : "可返回关卡地图继续挑战"}${stars < 3 ? "，可重刷冲击更高星级" : "，满分太棒了！"}`;
         return {
           stars,
           message: stars
-            ? (next ? `恭喜通关！已解锁下一关「${next.name}」${stars < 3 ? "，可重刷冲击更高星级" : "，满分太棒了！"}`
-                      : "恭喜通关全部关卡！")
+            ? success
             : "未达到 60% 通关线，建议回思维导图查漏补缺后再来。",
         };
       },

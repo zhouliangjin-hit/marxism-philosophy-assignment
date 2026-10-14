@@ -345,6 +345,7 @@ function route() {
 /* ================= 首页 ================= */
 Views.home = function () {
   const d = Store.data;
+  const vip = typeof VIP !== "undefined" && VIP.get();
   const totalDone = d.attempts.length;
   const totalOk = d.attempts.filter(a => a.ok).length;
   const pct = totalDone ? Math.round(100 * totalOk / totalDone) : 0;
@@ -401,7 +402,7 @@ Views.home = function () {
     <div class="feature-card">
       <div class="fi" style="background:var(--green-soft)">☰</div>
       <h3>闯关同步导图</h3>
-      <p>闯关解锁到哪，导图展开到哪；完整知识树可搜索、折叠，逐节点阅读源笔记并直达关联练习。</p>
+      <p>${vip ? "完整知识树已开放，可搜索、折叠，逐节点阅读源笔记并直达关联练习。" : "闯关解锁到哪，导图展开到哪；完整知识树可搜索、折叠，逐节点阅读源笔记并直达关联练习。"}</p>
       <a class="go" href="#/map">打开导图 →</a>
     </div>
   </div>
@@ -409,9 +410,9 @@ Views.home = function () {
   <h2 class="section-title">功能矩阵 <small>FEATURES</small></h2>
   <div class="feature-grid">
     ${[
-      ["map", "❖", "闯关导图", "闯关进度与知识树同页呈现，导图按解锁进度自动展开，支持搜索折叠与关联练习。", "var(--red-soft)"],
+      ["map", "❖", "闯关导图", vip ? "闯关进度与完整知识树同页呈现，全部分支已开放。" : "闯关进度与知识树同页呈现，导图按解锁进度自动展开，支持搜索折叠与关联练习。", "var(--red-soft)"],
       ["practice", "✎", "顺序刷题", "五大题库顺序/随机练习，即时判分，逐题附详细解析。", "var(--blue-soft)"],
-      ["challenge", "⚑", "闯关模式", "十大关卡递进解锁，60/85/100 分线对应一至三星。", "var(--gold-soft)"],
+      ["challenge", "⚑", "闯关模式", `${vip ? "十大关卡均可挑战" : "十大关卡递进解锁"}，60/85/100 分线对应一至三星。`, "var(--gold-soft)"],
       ["wrong", "☒", "错题本", "答错自动归集，支持按题库筛选、重练与“已掌握”标记。", "var(--red-soft)"],
       ["stats", "▤", "成绩分析", "作答趋势、题库与题型正确率、薄弱知识点一网打尽。", "var(--green-soft)"],
       ["subjective", "✦", "主观题精讲", "简答/辨析/论述附参考答案与评分要点，自评掌握度。", "var(--blue-soft)"],
